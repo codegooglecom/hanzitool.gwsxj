@@ -1,0 +1,767 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+    古文書寫機
+    
+    @Project Home   http://code.google.com/p/hanzitool/
+    @License        GNU GPL v3
+    @Author         Danny Lin <danny.0838(at)gmail.com>
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Language" content="zh-tw" />
+<title>古文書寫機</title>
+
+<!-- gwsxj Scripts -->
+<script type="text/javascript">
+<!--
+var gwsxj = (function(){
+	var gw = {};
+
+	var conf = gw.config = {
+        colChars: 35,  // eg. 35 (chars)
+        colIndent: 2,  // eg. 2 (chars)
+        colSpacing: 1,  // eg. 1 (halfshape spaces)
+        pageCols: 15,  // eg. 15 (columns)
+        pageSpacing: 2,  // eg. 2 (chars)
+
+        // upper, lower, middle
+        // right, middle, intermediate, left
+        decoUR: '',
+        decoUM: '',
+        decoUI: '',
+        decoUL: '',
+        decoLR: '',
+        decoLM: '',
+        decoLI: '',
+        decoLL: '',
+        decoMR: '',
+        decoMM: '',
+        decoML: '',
+        decoColTop: '',
+        decoColBottom: '',
+
+        removeSpaces: 0,  // 0 or 1
+        removeLineBreaks: 0,  // 0 or 1
+        
+        parseFullShape: 1,  // 0 or 1
+        parseFullShapeP: ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
+        parseFullShapeR: '　！″＃＄％＆′（）＊＋，－．／０１２３４５６７８９：；＜＝＞？＠ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ〔＼〕︿＿‵ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ｛｜｝～',
+
+        parseVertical: 1,  // 0 or 1
+        parseVerticalP: '（）｛｝〔〕【】《》〈〉「」『』﹙﹚﹛﹜﹝﹞‘’“”－–—―｜─│＝↑↓←→',
+        parseVerticalR: '︵︶︷︸︹︺︻︼︽︾︿﹀﹁﹂﹃﹄︵︶︷︸︹︺﹁﹂﹃﹄｜｜｜｜－│─‖→←↑↓',
+
+        parseEllipsis: 1,  // 0 or 1
+        parseEllipsisP: '…～',
+        parseEllipsisR: '┆｜',
+
+        removePuncs: 0,  // 0 or 1
+        removePuncsP: '，、。．‧；：？！︰…″｛｝《》〈〉「」『』﹛﹜﹝﹞‘’“”〝〞‵′︷︸︽︾︿﹀﹁﹂﹃﹄',
+
+        ancientPuncs: 0,  // 0 or 1
+
+        punc2only: 0,  // 0 or 1
+        punc2only1P: '，、．‧；：',
+        punc2only1R: '．',
+        punc2only2P: '。？！',
+        punc2only2R: '。',
+
+        removeQuotePuncs: 0,  // 0 or 1
+        removeQuotePuncsP:  '︰…″（）｛｝《》〈〉「」『』﹙﹚﹛﹜﹝﹞‘’“”〝〞‵′︵︶︷︸︽︾︿﹀﹁﹂﹃﹄'
+    };
+
+/**
+ * 私用函數
+ */
+
+	function escapeRegExp(s) {
+		return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+    }
+
+	function times(s,count) {
+		return count < 1 ? '' : new Array(count + 1).join(s);
+    }
+
+    function str_replace(pattern, replacer, subject) {
+        // 據 pattern 調整
+        switch (typeof pattern) {
+            case 'object':
+                if (typeof pattern.length=='undefined') { // RegExp
+                    var RE = pattern;
+                    pattern = [pattern];
+                }
+                else { // Array
+                    var pattern2 = [], i = pattern.length;
+					while(i--) {pattern2[i]=escapeRegExp(pattern[i])};
+                    var RE = new RegExp(pattern2.join('|'),'g');
+                }
+                break;
+            case 'string':
+				var RE = new RegExp(escapeRegExp(pattern),'g');pattern;
+                pattern = [pattern];
+                break;
+        }
+        // 據 replacer 調整
+        switch (typeof replacer) {
+            case 'string':
+                return subject.replace(RE,replacer);
+                break;
+            case 'object':
+                // 若  pattern 較 replacer 多，則多出的部分皆取代為 ''
+                var i = pattern.length, I = replacer.length;
+                while(--i>=I) {replacer[i]=''}
+                return subject.replace(RE,subReplace);
+                break;
+        }
+
+        return '';
+        
+        function subReplace(m) {
+            for (var i=0,I=pattern.length;i<I;i++) {
+                if (m.indexOf(pattern[i])!=-1) {return m.replace(pattern[i],replacer[i]);}
+            }
+            return m;
+        }
+    }
+
+	/* 與排版有關，須先處理 */
+	function parseTextCommon1(s) {
+		s = s.replace(/\r\n?/g,'\n');  // 統一換行字元
+		s = s.replace(/\t/gi,' ');  // 定位字元取代為半形空白
+		if (conf.removeSpaces) s = s.replace(/ (?!\b)/g, '');
+		if (conf.removeLineBreaks) s = removeLineBreaks(s);
+		indent = times('　',conf.colIndent); s = s.replace(/(^\n*|\n\n+)/g,'$1'+indent);  //縮排
+		return s;
+	}
+
+	/* 與排版無關的字元替換 */
+	function parseTextCommon2(s) {
+		if (conf.parseFullShape) s = parseFullShape(s);
+		if (conf.removePuncs) s = removePuncs(s);
+		if (conf.parseVertical) s = parseVertical(s);
+		if (conf.parseEllipsis) s = parseEllipsis(s);
+		
+		if (conf.ancientPuncs) {
+			if (conf.punc2only) s = punc2only(s);
+			if (conf.removeQuotePuncs) s = removeQuotePuncs(s);
+		}
+		return s;
+	}
+
+	function removeLineBreaks(s) {
+		return s.replace( /\n+/g, function (m){
+			if (m.indexOf('\n\n')==-1) return '';  // 1->0
+			return (m+'\n').replace(/\n\n/g,'\n'); // 2->2, 3->2, 4->3, 5->3, 6->4, 7->4, ...
+		});
+	}
+
+	function removePuncs(s) {
+		var pattern = conf.removePuncsP.split('');
+		var replace = '';
+		return str_replace(pattern,replace,s);
+	}
+
+	function parseFullShape(s) {
+		var pattern = conf.parseFullShapeP.split('');
+		var replace = conf.parseFullShapeR.split('');
+		return str_replace(pattern,replace,s);
+	}
+
+	function parseVertical(s) {
+		var pattern = conf.parseVerticalP.split('');
+		var replace = conf.parseVerticalR.split('');
+		return str_replace(pattern,replace,s);
+	}
+	
+	function parseEllipsis(s) {
+		var pattern = conf.parseEllipsisP.split('');
+		var replace = conf.parseEllipsisR.split('');
+		return str_replace(pattern,replace,s);
+	}
+
+	function punc2only(s) {
+		var pattern1 = conf.punc2only1P.split('');
+		var replace1 = conf.punc2only1R;
+		var pattern2 = conf.punc2only2P.split('');
+		var replace2 = conf.punc2only2R;
+		s = str_replace(pattern1,replace1,s);
+		return str_replace(pattern2,replace2,s);
+	}
+
+	function removeQuotePuncs(s) {
+		var pattern = conf.removeQuotePuncsP.split('');
+		var replace = '';
+		return str_replace(pattern,replace,s);
+	}
+
+/**
+ * 公用函數
+ */
+
+	gw.parse = function(s) {
+        var pageSpacing = conf.pageSpacing;
+        var colSpacing = conf.colSpacing;
+        var colChars = conf.colChars;
+        var pageWidth = conf.pageCols;
+
+        // 設定行距
+		var space = times(' ',colSpacing);
+        // 設定填空
+        var blank = (conf.ancientPuncs) ? '　　' : '　';
+
+        // 樣式
+        var pageArray = new Array(), page; // all 0-based
+
+        // 頁首 -> 頁首
+        var pageHead=[];
+        var t = setHeadMidTailDeco('UR','UM','UL');
+        var content = conf.decoUI;
+        var tmp = createDecoRow(t[0],t[1],content,t[2]);
+        if (tmp) pageHead.push(tmp);
+
+        var t = setHeadMidTailDeco('MR','MM','ML');
+        var deco = conf.decoColTop;
+        if (deco) {
+            deco = formatDecoString(deco);
+            for (var i=0,I=deco.length;i<I;i++){
+                pageHead.push(createDecoRow(t[0],t[1],deco[i],t[2],true));
+            }
+        }
+
+        pageHead=pageHead.join('\n');
+        if (pageHead) pageHead = pageHead + '\n'; else pageHead = '';
+
+        // 頁尾 -> 頁尾
+        var pageTail=[];
+        var t = setHeadMidTailDeco('MR','MM','ML');
+        var deco = conf.decoColBottom;
+        if (deco) {
+            deco = formatDecoString(deco);
+            for (var i=0,I=deco.length;i<I;i++){
+                pageTail.push(createDecoRow(t[0],t[1],deco[i],t[2],true));
+            }
+        }
+
+        var t = setHeadMidTailDeco('LR','LM','LL');
+        var content = conf.decoLI;
+        var tmp = createDecoRow(t[0],t[1],content,t[2]);
+        if (tmp) pageTail.push(tmp);
+
+        pageTail=pageTail.join('\n');
+        if (pageTail) pageTail = '\n' + pageTail; else pageTail = '';
+        
+        // 頁間
+		var pageSpacer=times(' \n',pageSpacing);
+
+        // 一般
+        var t = setHeadMidTailDeco('MR','MM','ML');
+
+        //將內容輸入陣列
+        var input = formatString(s);
+        var colPos, charPos;  // all 0-based
+        createNewPage();
+        for (var i=0,I=input.length; i<I; i++) {
+            insertChar(i);
+        }
+        
+        // 末頁補空白
+        for (var i=charPos,I=colChars;i<I;i++){page[i][colPos] = blank;}
+        var i=colPos;
+        while(i--){
+            for (var j=0,J=colChars;j<J;j++){
+                page[j][i] = blank;
+            }
+        }
+
+        // 輸出結果
+        for (var i=0,I=pageArray.length;i<I;i++) {
+            page = pageArray[i];
+            for (var j=0,J=colChars;j<J;j++) {
+                page[j] = decoRow(t[0],t[1],page[j],t[2]);
+            }
+            pageArray[i] = page.join('\n');
+        }
+        pageArray = pageHead + pageArray.join(pageTail+'\n'+pageSpacer+pageHead) + pageTail;
+        return pageArray;
+
+        /* sub-functions */
+        function insertChar(i) {
+            var char = input[i]; //讀取字串
+            if (char=='\n') {     //換行字元
+                // 補上空白
+                for (var j=charPos,J=colChars;j<J;j++) {
+                    page[j][colPos] = blank;
+                }
+                nextCol();
+            }
+            else {
+                if (charPos>=colChars) {   //字超列，換行
+                    nextCol();
+                }
+                page[charPos][colPos] = char;
+                charPos++;
+            }
+        }
+
+        function nextCol() {
+            if (colPos<=0) {createNewPage();}  //末行換行，即超頁，換頁
+            else {
+                colPos--;  //左移一行
+                charPos = 0;        //列位歸零，即從上面開始
+            }
+        }
+
+        /* 開新頁 */
+        function createNewPage() {
+            page = new Array();
+            for (var i=0,I=colChars;i<I;i++) {page[i] = new Array();}
+            pageArray.push(page);
+            colPos = pageWidth-1;
+            charPos = 0;
+        }
+
+        function formatStringSub(s) {
+            s = parseTextCommon2(s);
+            if (conf.ancientPuncs) {
+                //旁注化
+                s = s.split('').join('\r');
+				var RE = new RegExp('(.)\r(['+escapeRegExp(conf.punc2only1P+conf.punc2only1R+conf.punc2only2P+conf.punc2only2R)+'])','g');
+                s = s.replace(RE,'$1$2');
+                s = s.replace(/(^|\r)(.)(?=\r|$)/g,'$1$2　');
+                return s.split('\r');
+            }
+            return s.split('');
+        }
+
+        /* 字串格式化 */
+        function formatString(s){ // 傳回陣列
+            s = parseTextCommon1(s);
+            return formatStringSub(s);
+        }
+        
+        /* 修飾字串格式化 */
+        function formatDecoString(s){ // 傳回陣列
+            return formatStringSub(s);
+        }
+
+        /* 修飾某列 */
+        function decoRow(decoHead,decoMid,contentArray,decoTail) {
+            return decoHead + contentArray.join(decoMid) + decoTail;
+        }    
+
+        /* 建修飾列 */
+        function createDecoRow(decoHead,decoMid,content,decoTail,nodouble) {
+            var charRow=[], i=pageWidth;
+            if (content) {
+                if (conf.ancientPuncs && !nodouble) {
+                    while(i--){charRow.push(content+content);};
+                }
+                else {
+                    while(i--){charRow.push(content);};
+                }
+            }
+            return decoRow(decoHead,decoMid,charRow,decoTail);
+        }
+        
+        /* 設定首中尾修飾 */
+        function setHeadMidTailDeco(headId,midId,tailId) {
+            var decoHead = conf['deco'+headId];
+            var decoMid = conf['deco'+midId];
+            var decoTail = conf['deco'+tailId];
+            if (decoHead) decoHead = decoHead + space;
+            if (decoTail) decoTail = space + decoTail;
+            if (decoMid) decoMid = space + decoMid + space;
+            else decoMid = space;
+            return [decoHead,decoMid,decoTail];
+        }
+	};	
+
+	return gw;
+})();
+//-->
+</script>
+
+<!-- Panal Scripts -->
+<script type="text/javascript">
+<!--
+/**
+ * Initial Settings
+ */
+
+var conf = gwsxj.config;
+if (!window.lang) var lang = {};
+lang.windowBlocked = '無法開啟輸出視窗，請調整您的瀏覽器設定';
+lang.patternMB = '請輸入欲處理的字元';
+lang.replaceMB = '請輸入處理後的字元，與前項一一對應';
+lang.replaceMB1 = '請輸入處理後的字元';
+
+/**
+ * Helper Funcitons
+ */
+
+function $(id) {
+    return document.getElementById(id);
+}
+
+function renew(message,origin) {
+    return prompt(message,origin) || origin;
+}
+
+function windowOut(body,head) {
+	var w = window.open();
+	if (!w) {alert(lang.windowBlocked); return;}
+	var out = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' +
+		'\n<html>' + (head ? '\n<head>\n' + head + '\n</head>' : '') + 
+		'\n<body>\n' + body + '\n</body>\n</html>';
+	var wd = w.document; wd.write(out); wd.close();
+}
+
+/**
+ * Panel Operations
+ */
+
+// 強制正數
+function restrictPos(obj) {
+    var v = parseInt(obj.value);
+    if (isNaN(v)||v<=0) v = 1;
+    obj.value = v;
+}
+
+// 強制非零數
+function restrictNatural(obj) {
+    var v = parseInt(obj.value);
+    if (isNaN(v)||v<0) v = 0;
+    obj.value = v;
+}
+
+// 開關古式句讀
+function setAncientPunc() {
+    $('punc2only').disabled = 
+    $('removeQuotePuncs').disabled =
+    $('punc2onlyC').disabled =
+	$('removeQuotePuncsC').disabled =
+	!$('ancientPuncs').checked;
+}
+
+// 設定分隔字元
+function setDecos() {
+    var obj = $('line');
+    var v = obj.options[obj.selectedIndex].value.split(',');
+    $('UR').value=v[0];
+    $('UL').value=v[1];
+    $('LR').value=v[2];
+    $('LL').value=v[3];
+    $('UM').value=v[4];
+    $('LM').value=v[5];
+    setDecosMR(v[6]);
+    setDecosML(v[7]);
+    setDecosUI(v[8]);
+    setDecosLI(v[9]);
+    setDecosMM(v[10]);
+}
+
+function setDecosMR(v){
+    $('MR').value = $('MR2').value = 
+    $('MR3').value = $('MR4').value = 
+    $('MR5').value = $('MR6').value = v;
+}
+
+function setDecosML(v){
+    $('ML').value = $('ML2').value = 
+    $('ML3').value = $('ML4').value = 
+    $('ML5').value = $('ML6').value = v;
+}
+
+function setDecosUI(v){
+    $('UI').value = $('UI2').value = v;
+}
+
+function setDecosLI(v){
+    $('LI').value = $('LI2').value = v;
+}
+
+function setDecosMM(v){
+    $('MM').value = $('MM2').value = 
+    $('MM3').value = $('MM4').value = 
+    $('MM5').value = $('MM6').value = v;
+}
+
+function parseFullShapeCustom() {
+	conf.parseFullShapeP = renew(lang.patternMB,conf.parseFullShapeP);
+	conf.parseFullShapeR = renew(lang.replaceMB,conf.parseFullShapeR);
+}
+
+function parseVerticalCustom() {
+	conf.parseVerticalP = renew(lang.patternMB,conf.parseVerticalP);
+	conf.parseVerticalR = renew(lang.replaceMB,conf.parseVerticalR);
+}
+
+function parseEllipsisCustom() {
+	conf.parseEllipsisP = renew(lang.patternMB,conf.parseEllipsisP);
+	conf.parseEllipsisR = renew(lang.replaceMB,conf.parseEllipsisR);
+}
+
+function removePuncsCustom() {
+	conf.removePuncsP = renew(lang.patternMB,conf.removePuncsP);
+}
+
+function punc2onlyCustom() {
+	conf.punc2only1P = renew(lang.patternMB,conf.punc2only1P);
+	conf.punc2only1R = renew(lang.replaceMB1,conf.punc2only1R);
+	conf.punc2only2P = renew(lang.patternMB,conf.punc2only2P);
+	conf.punc2only2R = renew(lang.replaceMB1,conf.punc2only2R);
+}
+
+function removeQuotePuncsCustom() {
+	conf.removeQuotePuncsP = renew(lang.patternMB,conf.removeQuotePuncsP);
+}
+
+/**
+ * Init & Main
+ */
+
+function init() {
+    setAncientPunc();
+    setDecos();
+}
+
+function parseText() {
+    loadConfigs();
+	var body= '<pre style="line-height:1em;">\n' + gwsxj.parse($('INPUT').value) + '\n</pre>';
+	var head = '<title>古文書寫機: 轉換</title>';
+	windowOut(body, head);
+}
+
+function showHelp() {
+	var body = $('help').innerHTML + '\n<hr/>\n' + $('about').innerHTML;
+	var head = '<title>古文書寫機: 協助</title>';
+	windowOut(body, head);
+}
+
+function loadConfigs() {
+    conf.pageCols = parseInt($('pageCols').value);
+    conf.colChars = parseInt($('colChars').value);
+    conf.pageSpacing = parseInt($('pageSpacing').value);
+    conf.colIndent = parseInt($('colIndent').value);
+    conf.colSpacing = parseInt($('colSpacing').value);
+
+    conf.removeSpaces = $('removeSpaces').checked;
+    conf.removeLineBreaks = $('removeLineBreaks').checked;
+    conf.parseFullShape = $('parseFullShape').checked;
+    conf.parseVertical = $('parseVertical').checked;
+    conf.parseEllipsis = $('parseEllipsis').checked;
+    conf.removePuncs = $('removePuncs').checked;
+
+    conf.ancientPuncs = $('ancientPuncs').checked;
+    conf.punc2only = $('punc2only').checked;
+    conf.removeQuotePuncs = $('removeQuotePuncs').checked;
+    
+    // decos
+    conf.decoUR = $('UR').value;
+    conf.decoUM = $('UM').value;
+    conf.decoUI = $('UI').value;
+    conf.decoUL = $('UL').value;
+    conf.decoLR = $('LR').value;
+    conf.decoLM = $('LM').value;
+    conf.decoLI = $('LI').value;
+    conf.decoLL = $('LL').value;
+    conf.decoMR = $('MR').value;
+    conf.decoMM = $('MM').value;
+    conf.decoML = $('ML').value;
+    conf.decoColTop = $('decoColTop').value;
+    conf.decoColBottom = $('decoColBottom').value;
+}
+//-->
+</script>
+<style type="text/css">
+#main {border-collapse: collapse;}
+#main th {background-color: #eef;}
+#main th, #main td {border: 1px dashed #88f; vertical-align: top; padding: 5px;}
+
+fieldset {padding: 0.5em; font-size: 10pt;}
+fieldset input, fieldset select {font-size:0.85em;}
+
+textarea {font-size: 0.8em; line-height:1em;}
+textarea, #decos td input {font-family: monospace;}
+
+#decos td {width: 1.5em; height: 1.5em; border: none; padding: 1px; text-align: center; vertical-align: middle;}
+#decos td input {width: 1.5em;}
+
+p {margin:0.35em 0 0.35em 0;}
+</style>
+</head>
+
+<body onload="init();">
+<form id="wrapper" action="javascript:parseText();">
+<table id="main">
+    <tr>
+        <th>輸入</th>
+        <th>選項</th>
+    </tr>
+    <tr>
+        <td>
+            <textarea id="INPUT" style="width: 580px; height: 800px;"></textarea>
+        </td>
+        <td>
+            <div style="width: 200px;">
+            <fieldset>
+                <legend>佈局</legend>
+                <p>每頁<input type="text" id="pageCols" size="2" value="15" onchange="restrictPos(this);">行</p>
+                <p>每行<input type="text" id="colChars" size="2" value="20" onchange="restrictPos(this);">字</p>
+                <p>頁距<input type="text" id="pageSpacing" size="2" value="2" onchange="restrictNatural(this);" />行</p>
+                <p>行首縮排<input type="text" id="colIndent" size="2" value="0" onchange="restrictNatural(this);" />字</p>
+            </fieldset>
+            <fieldset>
+                <legend>樣式</legend>
+                <p>行距<input type="text" id="colSpacing" size="3" value="1" onchange="restrictNatural(this);" />半形空白</p>
+                <p>邊框：<select id="line" onchange="setDecos()" size="1">
+                      <option value=",,,,,,,,,," selected>無</option>
+                      <option value=",,,,,,,,,,　">清淡空白</option>
+                      <option value=",,,,,,,,,,|">半形隔線</option>
+                      <option value=",,,,,,,,,,│">全形隔線</option>
+                      <option value="┌,┐,└,┘,┬,┴,│,│,─,─,│">單線框</option>
+                      <option value="╭,╮,╰,╯,┬,┴,│,│,─,─,│">單線圓角框</option>
+                      <option value="╔,╗,╚,╝,╤,╧,║,║,═,═,│">雙線單隔框</option>
+                      <option value="╔,╗,╚,╝,╦,╩,║,║,═,═,║">雙線框</option>
+                      <option value="╔,╗,╚,╝,╤,╧,║,║,═,═,↓">蝌蚪往回游</option>
+                      <option value="╔,╗,╚,╝,╤,╧,║,║,═,═,↑">一切向上看</option>
+                      <option value="┼,┼,┼,┼,┬,┴,║,║,─,─,│">清風竹節型</option>
+                      <option value="╔,╗,╚,╝,╤,╧,║,║,囍,囍,│">雙喜臨門型</option>
+                      <option value="◇,◇,◇,◇,◇,◇,◆,◆,◇,◇,◆">有棱有角型</option>
+                      <option value="╔,╗,╚,╝,╤,╧,║,║,═,═,★">紅星閃閃型</option>
+                      <option value="●,●,●,●,●,●,║,║,○,○,│">霓虹燈閃爍</option>
+                      <option value="▽,▽,△,△,▽,△,│,│,─,─,│">我心依舊型</option>
+                      <option value="⊕,⊕,◎,◎,⊕,◎,║,║,○,○,│">大圈套小圈</option>
+                      <option value="～,～,～,～,～,～,│,│,～,～,│">魚兒水中游</option>
+                      <option value="卐,卐,卐,卐,卐,卐,卐,卐,卐,卐,│">阿彌陀佛型</option>
+                    </select>
+                </p>
+                <table id="decos" border="0" cellpadding="0" cellspacing="0">
+                      <tbody><tr>
+                        <td><input id="UR" type="text" /></td>
+                        <td><input id="UI" type="text" onchange="setDecosUI(this.value)" /></td>
+                        <td><input id="UM" type="text" /></td>
+                        <td><input id="UI2" type="text" onchange="setDecosUI(this.value)" /></td>
+                        <td><input id="UL" type="text" /></td>
+                      </tr>
+                        <tr>
+                        <td>
+                        <input id="MR" type="text" onchange="setDecosMR(this.value)" /></td>
+                        <td>
+                        <input type="text" disabled="disabled" value="Ｔ" /></td>
+                        <td>
+                        <input id="MM" type="text" onchange="setDecosMM(this.value)" /></td>
+                        <td><input type="text" disabled="disabled" value="Ｔ" /></td>
+                        <td><input id="ML" type="text" onchange="setDecosML(this.value)" /></td>
+                      </tr>
+                      <tr>
+                        <td><input id="MR2" type="text" onchange="setDecosMR(this.value)" /></td>
+                        <td align="center">
+                        <input type="text" disabled="disabled" value="Ｔ" /></td>
+                        <td><input id="MM2" type="text" onchange="setDecosMM(this.value)" value=" " /></td>
+                        <td align="center">
+                        <input type="text" disabled="disabled" value="Ｔ" /></td>
+                        <td><input id="ML2" type="text" onchange="setDecosML(this.value)" /></td>
+                      </tr>
+                      <tr>
+                        <td>
+                        <input id="MR3" type="text" onchange="setDecosMR(this.value)" /></td>
+                        <td align="center">觀</td>
+                        <td>
+                        <input id="MM3" type="text" onchange="setDecosMM(this.value)" value=" " /></td>
+                        <td align="center">古</td>
+                        <td>
+                        <input id="ML3" type="text" onchange="setDecosML(this.value)" /></td>
+                      </tr>
+                      <tr>
+                        <td>
+                        <input id="MR4" type="text" onchange="setDecosMR(this.value)" /></td>
+                        <td align="center">止</td>
+                        <td>
+                        <input id="MM4" type="text" onchange="setDecosMM(this.value)" /></td>
+                        <td align="center">文</td>
+                        <td>
+                        <input id="ML4" type="text" onchange="setDecosML(this.value)" /></td>
+                      </tr>
+                      <tr>
+                        <td>
+                        <input id="MR5" type="text" onchange="setDecosMR(this.value)" /></td>
+                        <td>
+                        <input type="text" disabled="disabled" value="Ｂ" /></td>
+                        <td>
+                        <input id="MM5" type="text" onchange="setDecosMM(this.value)" /></td>
+                        <td>
+                        <input type="text" disabled="disabled" value="Ｂ" /></td>
+                        <td>
+                        <input id="ML5" type="text" onchange="setDecosML(this.value)" /></td>
+                      </tr>
+                      <tr>
+                        <td>
+                        <input id="MR6" type="text" onchange="setDecosMR(this.value)" /></td>
+                        <td>
+                        <input type="text" disabled="disabled" value="Ｂ" /></td>
+                        <td>
+                        <input id="MM6" type="text" onchange="setDecosMM(this.value)" /></td>
+                        <td>
+                        <input type="text" disabled="disabled" value="Ｂ" /></td>
+                        <td>
+                        <input id="ML6" type="text" onchange="setDecosML(this.value)" /></td>
+                      </tr>
+                      <tr>
+                        <td><input id="LR" type="text" /></td>
+                        <td><input id="LI" type="text" onchange="setDecosLI(this.value)" /></td>
+                        <td><input id="LM" type="text" /></td>
+                        <td><input id="LI2" type="text" onchange="setDecosLI(this.value)" /></td>
+                        <td><input id="LL" type="text" /></td>
+                      </tr>
+                  </tbody></table>
+                <p>行首修飾 (Ｔ)：<input id="decoColTop" type="text" size="6" value="" /></p>
+                <p>行尾修飾 (Ｂ)：<input id="decoColBottom" type="text" size="6" value="" /></p>
+            </fieldset>
+            <fieldset>
+                <legend>進階設定</legend>
+                <p title="刪除不必要的半形空白，英文單字間會保留一個空白。">
+                <input type="checkbox" id="removeSpaces" />去除空白</p>
+                <p title="刪除單獨的換行，二個以上的換行視為換段而保留。">
+                <input type="checkbox" id="removeLineBreaks" />去除換行</p>
+                <p title="將常見的半形字元（如英文字母、阿拉伯數字、半形標點）轉為全形，使文字能正確對齊。">
+                <input type="checkbox" id="parseFullShape" checked />全形字元<input type="button" value="自訂" onclick="parseFullShapeCustom();" /></p>
+                <p title="將橫式標點符號轉為直式，如「轉為﹁。">
+                <input type="checkbox" id="parseVertical" checked />直式符號<input type="button" value="自訂" onclick="parseVerticalCustom();" /></p>
+                <p title="將刪節號…轉為直式，注意在某些介面可能無法顯示或對齊。">
+                <input type="checkbox" id="parseEllipsis" checked />處理刪節號<input type="button" value="自訂" onclick="parseEllipsisCustom();" /></p>
+                <p title="去除標點符號。古代常用於排版之【［（保留不刪。">
+                <input type="checkbox" id="removePuncs" />去除標點<input type="button" value="自訂" onclick="removePuncsCustom();" /></p>
+            </fieldset>
+            <fieldset>
+                <legend>古式句讀</legend>
+                <p title="仿古文將標點排在文字右方。勾選後文字會變成二行。">
+                <input type="checkbox" id="ancientPuncs" onchange="setAncientPunc()" />啟用古式旁注句讀</p>
+                <p title="將現代標點轉為古代的．。">
+                <input type="checkbox" id="punc2only" />只用讀號和句號<input type="button" value="自訂" id="punc2onlyC" onclick="punc2onlyCustom();" /></p>
+                <p title="刪除括號、引號等非旁注符號。">
+                <input type="checkbox" id="removeQuotePuncs" />刪除括號引號等<input type="button" value="自訂" id="removeQuotePuncsC" onclick="removeQuotePuncsCustom();" /></p>
+            </fieldset>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="text-align: center;"><input type="submit" value="轉換" /> <input type="button" value="協助" onclick="showHelp();" /></td>
+    </tr>
+</table>
+</form>
+<div id="help" style="display:none;">
+<pre>
+1.在 [輸入] 下面的文字區域輸入文本，設定適當的選項，再按下 [轉換] 即可得到結果。
+
+2.請使用等距字型，否則輸出的文本可能無法對齊。
+
+3.本程式為單一網頁檔案，右擊另存<a href="#">這個連結</a>即可在本機使用。
+</pre>
+</div>
+<div id="about">
+<p style="font-size: small;">古文書寫機 v1.1.0：請遵守 GNU GPL v3 授權協議使用</p>
+</div>
+</body>
+</html>
