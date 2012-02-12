@@ -16,9 +16,9 @@
 <script type="text/javascript">
 <!--
 var gwsxj = (function(){
-	var gw = {};
+    var gw = {};
 
-	var conf = gw.config = {
+    var conf = gw.config = {
         colChars: 35,  // eg. 35 (chars)
         colIndent: 2,  // eg. 2 (chars)
         colSpacing: 1,  // eg. 1 (halfshape spaces)
@@ -75,12 +75,12 @@ var gwsxj = (function(){
  * 私用函數
  */
 
-	function escapeRegExp(s) {
-		return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+    function escapeRegExp(s) {
+        return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
     }
 
-	function times(s,count) {
-		return count < 1 ? '' : new Array(count + 1).join(s);
+    function times(s,count) {
+        return count < 1 ? '' : new Array(count + 1).join(s);
     }
 
     function str_replace(pattern, replacer, subject) {
@@ -93,12 +93,12 @@ var gwsxj = (function(){
                 }
                 else { // Array
                     var pattern2 = [], i = pattern.length;
-					while(i--) {pattern2[i]=escapeRegExp(pattern[i])};
+                    while(i--) {pattern2[i]=escapeRegExp(pattern[i])};
                     var RE = new RegExp(pattern2.join('|'),'g');
                 }
                 break;
             case 'string':
-				var RE = new RegExp(escapeRegExp(pattern),'g');pattern;
+                var RE = new RegExp(escapeRegExp(pattern),'g');pattern;
                 pattern = [pattern];
                 break;
         }
@@ -125,99 +125,98 @@ var gwsxj = (function(){
         }
     }
 
-	/* 與排版有關，須先處理 */
-	function parseTextCommon1(s) {
-		s = s.replace(/\r\n?/g,'\n');  // 統一換行字元
-		s = s.replace(/\t/gi,' ');  // 定位字元取代為半形空白
-		if (conf.removeSpaces) s = s.replace(/ (?!\b)/g, '');
-		if (conf.removeLineBreaks) s = removeLineBreaks(s);
-		indent = times('　',conf.colIndent); s = s.replace(/(^\n*|\n\n+)/g,'$1'+indent);  //縮排
-		return s;
-	}
+    /* 與排版有關，須先處理 */
+    function parseTextCommon1(s) {
+        s = s.replace(/\r\n?/g,'\n');  // 統一換行字元
+        s = s.replace(/\t/gi,' ');  // 定位字元取代為半形空白
+        if (conf.removeSpaces) s = s.replace(/ (?!\b)/g, '');
+        if (conf.removeLineBreaks) s = removeLineBreaks(s);
+        indent = times('　',conf.colIndent); s = s.replace(/(^\n*|\n\n+)/g,'$1'+indent);  //縮排
+        return s;
+    }
 
-	/* 與排版無關的字元替換 */
-	function parseTextCommon2(s) {
-		if (conf.parseFullShape) s = parseFullShape(s);
-		if (conf.removePuncs) s = removePuncs(s);
-		if (conf.parseVertical) s = parseVertical(s);
-		if (conf.parseEllipsis) s = parseEllipsis(s);
-		
-		if (conf.ancientPuncs) {
-			if (conf.punc2only) s = punc2only(s);
-			if (conf.removeQuotePuncs) s = removeQuotePuncs(s);
-		}
-		return s;
-	}
+    /* 與排版無關的字元替換 */
+    function parseTextCommon2(s) {
+        if (conf.parseFullShape) s = parseFullShape(s);
+        if (conf.removePuncs) s = removePuncs(s);
+        if (conf.parseVertical) s = parseVertical(s);
+        if (conf.parseEllipsis) s = parseEllipsis(s);
+        
+        if (conf.ancientPuncs) {
+            if (conf.punc2only) s = punc2only(s);
+            if (conf.removeQuotePuncs) s = removeQuotePuncs(s);
+        }
+        return s;
+    }
 
-	function removeLineBreaks(s) {
-		return s.replace( /\n+/g, function (m){
-			if (m.indexOf('\n\n')==-1) return '';  // 1->0
-			return (m+'\n').replace(/\n\n/g,'\n'); // 2->2, 3->2, 4->3, 5->3, 6->4, 7->4, ...
-		});
-	}
+    function removeLineBreaks(s) {
+        return s.replace( /\n+/g, function (m){
+            if (m.indexOf('\n\n')==-1) return '';  // 1->0
+            return (m+'\n').replace(/\n\n/g,'\n'); // 2->2, 3->2, 4->3, 5->3, 6->4, 7->4, ...
+        });
+    }
 
-	function removePuncs(s) {
-		var pattern = conf.removePuncsP.split('');
-		var replace = '';
-		return str_replace(pattern,replace,s);
-	}
+    function removePuncs(s) {
+        var pattern = conf.removePuncsP.split('');
+        var replace = '';
+        return str_replace(pattern,replace,s);
+    }
 
-	function parseFullShape(s) {
-		var pattern = conf.parseFullShapeP.split('');
-		var replace = conf.parseFullShapeR.split('');
-		return str_replace(pattern,replace,s);
-	}
+    function parseFullShape(s) {
+        var pattern = conf.parseFullShapeP.split('');
+        var replace = conf.parseFullShapeR.split('');
+        return str_replace(pattern,replace,s);
+    }
 
-	function parseVertical(s) {
-		var pattern = conf.parseVerticalP.split('');
-		var replace = conf.parseVerticalR.split('');
-		return str_replace(pattern,replace,s);
-	}
-	
-	function parseEllipsis(s) {
-		var pattern = conf.parseEllipsisP.split('');
-		var replace = conf.parseEllipsisR.split('');
-		return str_replace(pattern,replace,s);
-	}
+    function parseVertical(s) {
+        var pattern = conf.parseVerticalP.split('');
+        var replace = conf.parseVerticalR.split('');
+        return str_replace(pattern,replace,s);
+    }
+    
+    function parseEllipsis(s) {
+        var pattern = conf.parseEllipsisP.split('');
+        var replace = conf.parseEllipsisR.split('');
+        return str_replace(pattern,replace,s);
+    }
 
-	function punc2only(s) {
-		var pattern1 = conf.punc2only1P.split('');
-		var replace1 = conf.punc2only1R;
-		var pattern2 = conf.punc2only2P.split('');
-		var replace2 = conf.punc2only2R;
-		s = str_replace(pattern1,replace1,s);
-		return str_replace(pattern2,replace2,s);
-	}
+    function punc2only(s) {
+        var pattern1 = conf.punc2only1P.split('');
+        var replace1 = conf.punc2only1R;
+        var pattern2 = conf.punc2only2P.split('');
+        var replace2 = conf.punc2only2R;
+        s = str_replace(pattern1,replace1,s);
+        return str_replace(pattern2,replace2,s);
+    }
 
-	function removeQuotePuncs(s) {
-		var pattern = conf.removeQuotePuncsP.split('');
-		var replace = '';
-		return str_replace(pattern,replace,s);
-	}
+    function removeQuotePuncs(s) {
+        var pattern = conf.removeQuotePuncsP.split('');
+        var replace = '';
+        return str_replace(pattern,replace,s);
+    }
 
 /**
  * 公用函數
  */
 
-	gw.parse = function(s) {
+    gw.parse = function(s) {
         var pageSpacing = conf.pageSpacing;
         var colSpacing = conf.colSpacing;
         var colChars = conf.colChars;
         var pageWidth = conf.pageCols;
 
         // 設定行距
-		var space = times(' ',colSpacing);
+        var space = times(' ',colSpacing);
         // 設定填空
         var blank = (conf.ancientPuncs) ? '　　' : '　';
 
         // 樣式
         var pageArray = new Array(), page; // all 0-based
 
-        // 頁首 -> 頁首
+        // 頁首 -> pageHead
         var pageHead=[];
         var t = setHeadMidTailDeco('UR','UM','UL');
-        var content = conf.decoUI;
-        var tmp = createDecoRow(t[0],t[1],content,t[2]);
+        var tmp = createDecoRow(t[0],t[1],conf.decoUI,t[2]);
         if (tmp) pageHead.push(tmp);
 
         var t = setHeadMidTailDeco('MR','MM','ML');
@@ -232,7 +231,7 @@ var gwsxj = (function(){
         pageHead=pageHead.join('\n');
         if (pageHead) pageHead = pageHead + '\n'; else pageHead = '';
 
-        // 頁尾 -> 頁尾
+        // 頁尾 -> pageTail
         var pageTail=[];
         var t = setHeadMidTailDeco('MR','MM','ML');
         var deco = conf.decoColBottom;
@@ -244,20 +243,19 @@ var gwsxj = (function(){
         }
 
         var t = setHeadMidTailDeco('LR','LM','LL');
-        var content = conf.decoLI;
-        var tmp = createDecoRow(t[0],t[1],content,t[2]);
+        var tmp = createDecoRow(t[0],t[1],conf.decoLI,t[2]);
         if (tmp) pageTail.push(tmp);
 
         pageTail=pageTail.join('\n');
         if (pageTail) pageTail = '\n' + pageTail; else pageTail = '';
         
-        // 頁間
-		var pageSpacer=times(' \n',pageSpacing);
+        // 頁間 -> pageSpacer
+        var pageSpacer=times(' \n',pageSpacing);
 
         // 一般
         var t = setHeadMidTailDeco('MR','MM','ML');
 
-        //將內容輸入陣列
+        //將文本輸入陣列
         var input = formatString(s);
         var colPos, charPos;  // all 0-based
         createNewPage();
@@ -326,7 +324,7 @@ var gwsxj = (function(){
             if (conf.ancientPuncs) {
                 //旁注化
                 s = s.split('').join('\r');
-				var RE = new RegExp('(.)\r(['+escapeRegExp(conf.punc2only1P+conf.punc2only1R+conf.punc2only2P+conf.punc2only2R)+'])','g');
+                var RE = new RegExp('(.)\r(['+escapeRegExp(conf.punc2only1P+conf.punc2only1R+conf.punc2only2P+conf.punc2only2R)+'])','g');
                 s = s.replace(RE,'$1$2');
                 s = s.replace(/(^|\r)(.)(?=\r|$)/g,'$1$2　');
                 return s.split('\r');
@@ -375,9 +373,9 @@ var gwsxj = (function(){
             else decoMid = space;
             return [decoHead,decoMid,decoTail];
         }
-	};	
+    };    
 
-	return gw;
+    return gw;
 })();
 //-->
 </script>
@@ -390,7 +388,8 @@ var gwsxj = (function(){
  */
 
 var conf = gwsxj.config;
-if (!window.lang) var lang = {};
+var conf_dft = {};
+var lang = {};
 lang.windowBlocked = '無法開啟輸出視窗，請調整您的瀏覽器設定';
 lang.patternMB = '請輸入欲處理的字元';
 lang.replaceMB = '請輸入處理後的字元，與前項一一對應';
@@ -409,12 +408,12 @@ function renew(message,origin) {
 }
 
 function windowOut(body,head) {
-	var w = window.open();
-	if (!w) {alert(lang.windowBlocked); return;}
-	var out = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' +
-		'\n<html>' + (head ? '\n<head>\n' + head + '\n</head>' : '') + 
-		'\n<body>\n' + body + '\n</body>\n</html>';
-	var wd = w.document; wd.write(out); wd.close();
+    var w = window.open();
+    if (!w) {alert(lang.windowBlocked); return;}
+    var out = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' +
+        '\n<html>' + (head ? '\n<head>\n' + head + '\n</head>' : '') + 
+        '\n<body>\n' + body + '\n</body>\n</html>';
+    var wd = w.document; wd.write(out); wd.close();
 }
 
 /**
@@ -440,8 +439,8 @@ function setAncientPunc() {
     $('punc2only').disabled = 
     $('removeQuotePuncs').disabled =
     $('punc2onlyC').disabled =
-	$('removeQuotePuncsC').disabled =
-	!$('ancientPuncs').checked;
+    $('removeQuotePuncsC').disabled =
+    !$('ancientPuncs').checked;
 }
 
 // 設定分隔字元
@@ -488,33 +487,33 @@ function setDecosMM(v){
 }
 
 function parseFullShapeCustom() {
-	conf.parseFullShapeP = renew(lang.patternMB,conf.parseFullShapeP);
-	conf.parseFullShapeR = renew(lang.replaceMB,conf.parseFullShapeR);
+    conf.parseFullShapeP = renew(lang.patternMB,conf.parseFullShapeP);
+    conf.parseFullShapeR = renew(lang.replaceMB,conf.parseFullShapeR);
 }
 
 function parseVerticalCustom() {
-	conf.parseVerticalP = renew(lang.patternMB,conf.parseVerticalP);
-	conf.parseVerticalR = renew(lang.replaceMB,conf.parseVerticalR);
+    conf.parseVerticalP = renew(lang.patternMB,conf.parseVerticalP);
+    conf.parseVerticalR = renew(lang.replaceMB,conf.parseVerticalR);
 }
 
 function parseEllipsisCustom() {
-	conf.parseEllipsisP = renew(lang.patternMB,conf.parseEllipsisP);
-	conf.parseEllipsisR = renew(lang.replaceMB,conf.parseEllipsisR);
+    conf.parseEllipsisP = renew(lang.patternMB,conf.parseEllipsisP);
+    conf.parseEllipsisR = renew(lang.replaceMB,conf.parseEllipsisR);
 }
 
 function removePuncsCustom() {
-	conf.removePuncsP = renew(lang.patternMB,conf.removePuncsP);
+    conf.removePuncsP = renew(lang.patternMB,conf.removePuncsP);
 }
 
 function punc2onlyCustom() {
-	conf.punc2only1P = renew(lang.patternMB,conf.punc2only1P);
-	conf.punc2only1R = renew(lang.replaceMB1,conf.punc2only1R);
-	conf.punc2only2P = renew(lang.patternMB,conf.punc2only2P);
-	conf.punc2only2R = renew(lang.replaceMB1,conf.punc2only2R);
+    conf.punc2only1P = renew(lang.patternMB,conf.punc2only1P);
+    conf.punc2only1R = renew(lang.replaceMB1,conf.punc2only1R);
+    conf.punc2only2P = renew(lang.patternMB,conf.punc2only2P);
+    conf.punc2only2R = renew(lang.replaceMB1,conf.punc2only2R);
 }
 
 function removeQuotePuncsCustom() {
-	conf.removeQuotePuncsP = renew(lang.patternMB,conf.removeQuotePuncsP);
+    conf.removeQuotePuncsP = renew(lang.patternMB,conf.removeQuotePuncsP);
 }
 
 /**
@@ -522,21 +521,34 @@ function removeQuotePuncsCustom() {
  */
 
 function init() {
+    setDefaults()
     setAncientPunc();
     setDecos();
 }
 
 function parseText() {
     loadConfigs();
-	var body= '<pre style="line-height:1em;">\n' + gwsxj.parse($('INPUT').value) + '\n</pre>';
-	var head = '<title>古文書寫機: 轉換</title>';
-	windowOut(body, head);
+    var body= '<pre style="line-height:1em;">\n' + gwsxj.parse($('INPUT').value) + '\n</pre>';
+    var head = '<title>古文書寫機: 轉換</title>';
+    windowOut(body, head);
 }
 
 function showHelp() {
-	var body = $('help').innerHTML + '\n<hr/>\n' + $('about').innerHTML;
-	var head = '<title>古文書寫機: 協助</title>';
-	windowOut(body, head);
+    var body = $('help').innerHTML + '\n<hr/>\n' + $('about').innerHTML;
+    var head = '<title>古文書寫機: 協助</title>';
+    windowOut(body, head);
+}
+
+function setDefaults() {
+    for (var i in conf) { conf_dft[i] = conf[i]; }
+}
+
+function resetConfigs() {
+    for (var i in conf_dft) { conf[i] = conf_dft[i]; }
+    var t = setTimeout(function(){
+        setAncientPunc();
+        clearTimeout(t);
+    }, 0);
 }
 
 function loadConfigs() {
@@ -747,7 +759,11 @@ p {margin:0.35em 0 0.35em 0;}
         </td>
     </tr>
     <tr>
-        <td colspan="2" style="text-align: center;"><input type="submit" value="轉換" /> <input type="button" value="協助" onclick="showHelp();" /></td>
+        <td colspan="2" style="text-align: center;">
+            <input type="submit" value="轉換" />
+            <input type="reset" value="重設" onclick="resetConfigs();" />
+            <input type="button" value="協助" onclick="showHelp();" />
+        </td>
     </tr>
 </table>
 </form>
@@ -755,9 +771,11 @@ p {margin:0.35em 0 0.35em 0;}
 <pre>
 1.在 [輸入] 下面的文字區域輸入文本，設定適當的選項，再按下 [轉換] 即可得到結果。
 
-2.請使用等距字型，否則輸出的文本可能無法對齊。
+2.按下 [重設] 會把所有欄位回歸預設值，如果你想找回之前填寫的文本，點擊 [輸入] 下面的文字區域，並按右鍵 [復原] (或 Ctrl+Z) 即可。
 
-3.本程式為單一網頁檔案，右擊另存<a href="#">這個連結</a>即可在本機使用。
+3.輸出的文本應使用等距字型，才能確保正常對齊。
+
+4.本程式為單一網頁檔案，右擊另存<a href="#">這個連結</a>即可在本機使用。
 </pre>
 </div>
 <div id="about">
