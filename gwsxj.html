@@ -613,14 +613,14 @@ p {margin:0.35em 0 0.35em 0;}
     </tr>
     <tr>
         <td>
-            <textarea id="INPUT" style="width: 580px; height: 800px;"></textarea>
+            <textarea id="INPUT" style="width: 580px; height: 800px;" cols="" rows=""></textarea>
         </td>
         <td>
             <div style="width: 200px;">
             <fieldset>
                 <legend>佈局</legend>
-                <p>每頁<input type="text" id="pageCols" size="2" value="15" onchange="restrictPos(this);">行</p>
-                <p>每行<input type="text" id="colChars" size="2" value="20" onchange="restrictPos(this);">字</p>
+                <p>每頁<input type="text" id="pageCols" size="2" value="15" onchange="restrictPos(this);" />行</p>
+                <p>每行<input type="text" id="colChars" size="2" value="20" onchange="restrictPos(this);" />字</p>
                 <p>頁距<input type="text" id="pageSpacing" size="2" value="2" onchange="restrictNatural(this);" />行</p>
                 <p>行首縮排<input type="text" id="colIndent" size="2" value="0" onchange="restrictNatural(this);" />字</p>
             </fieldset>
@@ -628,7 +628,7 @@ p {margin:0.35em 0 0.35em 0;}
                 <legend>樣式</legend>
                 <p>行距<input type="text" id="colSpacing" size="3" value="1" onchange="restrictNatural(this);" />半形空白</p>
                 <p>邊框：<select id="line" onchange="setDecos()" size="1">
-                      <option value=",,,,,,,,,," selected>無</option>
+                      <option value=",,,,,,,,,," selected="selected">無</option>
                       <option value=",,,,,,,,,,　">清淡空白</option>
                       <option value=",,,,,,,,,,|">半形隔線</option>
                       <option value=",,,,,,,,,,│">全形隔線</option>
@@ -738,11 +738,11 @@ p {margin:0.35em 0 0.35em 0;}
                 <p title="刪除單獨的換行，二個以上的換行視為換段而保留。">
                 <input type="checkbox" id="removeLineBreaks" />去除換行</p>
                 <p title="將常見的半形字元（如英文字母、阿拉伯數字、半形標點）轉為全形，使文字能正確對齊。">
-                <input type="checkbox" id="parseFullShape" checked />全形字元<input type="button" value="自訂" onclick="parseFullShapeCustom();" /></p>
+                <input type="checkbox" id="parseFullShape" checked="checked" />全形字元<input type="button" value="自訂" onclick="parseFullShapeCustom();" /></p>
                 <p title="將橫式標點符號轉為直式，如「轉為﹁。">
-                <input type="checkbox" id="parseVertical" checked />直式符號<input type="button" value="自訂" onclick="parseVerticalCustom();" /></p>
+                <input type="checkbox" id="parseVertical" checked="checked" />直式符號<input type="button" value="自訂" onclick="parseVerticalCustom();" /></p>
                 <p title="將刪節號…轉為直式，注意在某些介面可能無法顯示或對齊。">
-                <input type="checkbox" id="parseEllipsis" checked />處理刪節號<input type="button" value="自訂" onclick="parseEllipsisCustom();" /></p>
+                <input type="checkbox" id="parseEllipsis" checked="checked" />處理刪節號<input type="button" value="自訂" onclick="parseEllipsisCustom();" /></p>
                 <p title="去除標點符號。古代常用於排版之【［（保留不刪。">
                 <input type="checkbox" id="removePuncs" />去除標點<input type="button" value="自訂" onclick="removePuncsCustom();" /></p>
             </fieldset>
